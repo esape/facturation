@@ -16,8 +16,8 @@ interface Client {
 class Service {
   id: string
   date: {
-    from: Date
-    to: Date | null
+    from?: Date
+    to?: Date | null
   }
   title: string
   quantity: number
@@ -28,11 +28,11 @@ class Service {
   taxIncludedAmount: number
 
   constructor(
-    from: Date,
-    to: Date | null,
     title: string,
     quantity: number,
     unitPrice: number,
+    from?: Date,
+    to?: Date | null,
   ) {
     this.id = uuid()
     this.date = {
@@ -55,14 +55,20 @@ class Invoice {
   invoiceNumber: string
   client: Client
   services: Service[]
-  paymentDate: Date
+  paymentDate?: Date | null
 
-  constructor(invoiceNumber: string, date: Date, paymentDate: Date, client: Client, services: Service[]) {
+  constructor(
+    invoiceNumber: string,
+    date: Date,
+    client: Client,
+    services: Service[],
+    paymentDate?: Date | null,
+  ) {
     this.invoiceNumber = invoiceNumber
     this.date = date
-    this.paymentDate = paymentDate
     this.client = client
     this.services = services
+    this.paymentDate = paymentDate
   }
 
   withoutTaxTotalAmount() {
@@ -125,25 +131,25 @@ const App = () => {
 
   const addNewService = () => {
     try {
-      if (!newServiceStartDate)
-        throw new Error('La date de début est incorrecte')
+      // if (!newServiceStartDate)
+      //   throw new Error('La date de début est incorrecte')
       const endDate = newServiceEndDate ? newServiceEndDate : null
-      if (!newServiceDescription)
-        throw new Error('Il manque la description du service')
+      // if (!newServiceDescription)
+      //   throw new Error('Il manque la description du service')
       // eslint-disable-next-line no-useless-escape
-      const numberValidator = /^\d+[\.|\,]?\d*$/
-      if (!numberValidator.test(newServiceQuantity))
-        throw new Error('La quantité est invalide')
-      if (!numberValidator.test(newServiceUnitPrice))
-        throw new Error('Le prix unitaire est invalide')
+      // const numberValidator = /^\d+[\.|\,]?\d*$/
+      // if (!numberValidator.test(newServiceQuantity))
+      //   throw new Error('La quantité est invalide')
+      // if (!numberValidator.test(newServiceUnitPrice))
+      //   throw new Error('Le prix unitaire est invalide')
       setServices(
         services.concat([
           new Service(
-            newServiceStartDate,
-            endDate,
             newServiceDescription,
             Number(newServiceQuantity),
             Number(newServiceUnitPrice),
+            newServiceStartDate,
+            endDate,
           ),
         ]),
       )
@@ -165,12 +171,11 @@ const App = () => {
   const generatePrint = () => {
     try {
       // if (!invoiceNumber) throw new Error('Il manque le numéro de facture')
-      if (!paymentDate) throw new Error('Il faut choisir une date de paiement')
+      // if (!paymentDate) throw new Error('Il faut choisir une date de paiement')
       setInvoice(
         new Invoice(
           invoiceNumber,
           date,
-          paymentDate,
           {
             name: clientName,
             intracommunautaryNumber: clientIntracommunautaryNumber,
@@ -179,6 +184,7 @@ const App = () => {
             deliveryAddress: clientDeliveryAddress.join('\n'),
           },
           services,
+          paymentDate,
         ),
       )
       setAskedForPrint(true)
@@ -317,7 +323,8 @@ const App = () => {
               return (
                 <tr key={service.id}>
                   <td className='width-80'>
-                    {service.date.from.toLocaleDateString()}
+                    {service.date.from &&
+                      service.date.from.toLocaleDateString()}
                   </td>
                   <td className='width-80'>
                     {service.date.to && service.date.to.toLocaleDateString()}
@@ -401,13 +408,12 @@ const App = () => {
 
         <div className='footer'>
           {/* {invoiceNumber && */}
-          {
-            paymentDate &&
+          {/* {paymentDate &&
             clientName &&
             // clientIntracommunautaryNumber &&
             clientAddress.length &&
             clientAddress[0] &&
-            !!services.length && (
+            !!services.length && ( */}
               <button
                 id='printButton'
                 onClick={async () => {
@@ -416,7 +422,7 @@ const App = () => {
               >
                 Imprimer la facture
               </button>
-            )}
+            {/* )} */}
         </div>
       </div>
 
@@ -507,8 +513,10 @@ const App = () => {
               {invoice.services.map(service => (
                 <tr key={service.id}>
                   <td className='border-right'>
-                    {service.date.from.toLocaleDateString()}
-                    {service.date.to &&
+                    {service.date.from &&
+                      service.date.from.toLocaleDateString()}
+                    {service.date.from &&
+                      service.date.to &&
                       ` au ${service.date.to.toLocaleDateString()}`}
                   </td>
                   <td className='border-right'>{service.title}</td>
@@ -581,7 +589,8 @@ const App = () => {
                     <tr>
                       <td className='align-right'>Date de règlement :</td>
                       <td className='align-center'>
-                        {invoice.paymentDate.toLocaleDateString()}
+                        {invoice.paymentDate &&
+                          invoice.paymentDate.toLocaleDateString()}
                       </td>
                     </tr>
                     <tr>
